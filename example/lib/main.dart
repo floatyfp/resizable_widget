@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Resizable Widget Example',
       theme: ThemeData.dark(),
       home: const MyPage(),
@@ -18,42 +19,62 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyPage extends StatelessWidget {
+
+class MyPage extends StatefulWidget {
   const MyPage({Key? key}) : super(key: key);
 
   @override
+  State<MyPage> createState() => _MyPageState();
+}
+
+class _MyPageState extends State<MyPage> {
+  var textDirection = TextDirection.rtl;
+
+  @override
   Widget build(BuildContext context) {
+    final rtl = textDirection == TextDirection.rtl;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Resizable Widget Example'),
-      ),
-      body: ResizableWidget(
-        isHorizontalSeparator: false,
-        isDisabledSmartHide: false,
-        separatorColor: Colors.white12,
-        separatorSize: 4,
-        onResized: _printResizeInfo,
-        children: [
-          Container(color: Colors.greenAccent),
-          ResizableWidget(
-            isHorizontalSeparator: true,
-            separatorColor: Colors.blue,
-            separatorSize: 10,
-            children: [
-              Container(color: Colors.greenAccent),
-              ResizableWidget(
-                children: [
-                  Container(color: Colors.greenAccent),
-                  Container(color: Colors.yellowAccent),
-                  Container(color: Colors.redAccent),
-                ],
-                percentages: const [0.2, 0.5, 0.3],
-              ),
-              Container(color: Colors.redAccent),
-            ],
+        title: Text('Resizable Widget Example (${rtl? 'Right-to-Left' : 'Left-to-Right'})'),
+        actions: [
+          IconButton(
+            icon: Icon(rtl ? Icons.subdirectory_arrow_left : Icons.subdirectory_arrow_right),
+            onPressed: () {
+              setState(() => textDirection = rtl? TextDirection.ltr : TextDirection.rtl);
+            },
           ),
-          Container(color: Colors.redAccent),
         ],
+      ),
+      body: Directionality(
+        textDirection: textDirection,
+        child: ResizableWidget(
+          isHorizontalSeparator: false,
+          isDisabledSmartHide: false,
+          separatorColor: Colors.white12,
+          separatorSize: 4,
+          onResized: _printResizeInfo,
+          children: [
+            Container(color: Colors.greenAccent),
+            ResizableWidget(
+              isHorizontalSeparator: true,
+              separatorColor: Colors.blue,
+              separatorSize: 10,
+              children: [
+                Container(color: Colors.greenAccent),
+                ResizableWidget(
+                  children: [
+                    Container(color: Colors.greenAccent),
+                    Container(color: Colors.yellowAccent),
+                    Container(color: Colors.redAccent),
+                  ],
+                  percentages: const [0.2, 0.5, 0.3],
+                ),
+                Container(color: Colors.redAccent),
+              ],
+            ),
+            Container(color: Colors.redAccent),
+          ],
+        ),
       ),
     );
   }
