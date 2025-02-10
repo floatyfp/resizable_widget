@@ -7,11 +7,11 @@ class SeparatorController {
 
   const SeparatorController(this._index, this._parentController);
 
-  void onPanUpdate(DragUpdateDetails details, BuildContext context) {
-    _parentController.resize(_index, details.delta);
+  void onPanUpdate(BuildContext context, DragUpdateDetails details) {
+    _parentController.resize(context, _index, details.delta);
   }
 
-  void onDoubleTap() {
-    _parentController.tryHideOrShow(_index);
+  void onDoubleTap(BuildContext context) {
+    _parentController.tryHideOrShow(context, _index);
   }
 }

@@ -39,7 +39,7 @@ class _SeparatorState extends State<Separator> {
             height: _info.isHorizontalSeparator ? _info.size : double.infinity,
           ),
         ),
-        onPanUpdate: (details) => _controller.onPanUpdate(details, context),
-        onDoubleTap: () => _controller.onDoubleTap(),
+        onPanUpdate: (details) => _controller.onPanUpdate(context, details),
+        onDoubleTap: () => _controller.onDoubleTap(context),
       );
 }

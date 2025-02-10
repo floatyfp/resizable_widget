@@ -11,20 +11,17 @@ class ResizableWidgetModel {
   final ResizableWidgetArgsInfo _info;
   final children = <ResizableWidgetChildData>[];
   double? maxSize;
-  double? get maxSizeWithoutSeparators => maxSize == null
-      ? null
-      : maxSize! - (children.length ~/ 2) * _info.separatorSize;
+
+  double? get maxSizeWithoutSeparators => maxSize == null ? null : maxSize! - (children.length ~/ 2) * _info.separatorSize;
 
   ResizableWidgetModel(this._info);
 
   void init(SeparatorFactory separatorFactory) {
     final originalChildren = _info.children;
     final size = originalChildren.length;
-    final originalPercentages =
-        _info.percentages ?? List.filled(size, 1 / size);
+    final originalPercentages = _info.percentages ?? List.filled(size, 1 / size);
     for (var i = 0; i < size - 1; i++) {
-      children.add(ResizableWidgetChildData(
-          originalChildren[i], originalPercentages[i]));
+      children.add(ResizableWidgetChildData(originalChildren[i], originalPercentages[i]));
       children.add(ResizableWidgetChildData(
           separatorFactory.call(SeparatorArgsBasicInfo(
             2 * i + 1,
@@ -35,14 +32,11 @@ class ResizableWidgetModel {
           )),
           null));
     }
-    children.add(ResizableWidgetChildData(
-        originalChildren[size - 1], originalPercentages[size - 1]));
+    children.add(ResizableWidgetChildData(originalChildren[size - 1], originalPercentages[size - 1]));
   }
 
   void setSizeIfNeeded(BoxConstraints constraints) {
-    final max = _info.isHorizontalSeparator
-        ? constraints.maxHeight
-        : constraints.maxWidth;
+    final max = _info.isHorizontalSeparator ? constraints.maxHeight : constraints.maxWidth;
     var isMaxSizeChanged = maxSize == null || maxSize! != max;
     if (!isMaxSizeChanged || children.isEmpty) {
       return;
@@ -62,44 +56,21 @@ class ResizableWidgetModel {
     }
   }
 
-  void resize(int separatorIndex, Offset offset) {
-    final leftSize = _resizeImpl(separatorIndex - 1, offset);
-    final rightSize = _resizeImpl(separatorIndex + 1, offset * (-1));
+  void resize(BuildContext context, int separatorIndex, Offset offset) {
+    if (_info.isVerticalSeparator && Directionality.of(context) == TextDirection.rtl) {
+      // Reverse offset if separator is vertical and context direction is Right-to-Left.
+      offset *= -1;
+    }
 
-    if (leftSize < 0) {
-      _resizeImpl(
-          separatorIndex - 1,
-          _info.isHorizontalSeparator
-              ? Offset(0, -leftSize)
-              : Offset(-leftSize, 0));
-      _resizeImpl(
-          separatorIndex + 1,
-          _info.isHorizontalSeparator
-              ? Offset(0, leftSize)
-              : Offset(leftSize, 0));
-    }
-    if (rightSize < 0) {
-      _resizeImpl(
-          separatorIndex - 1,
-          _info.isHorizontalSeparator
-              ? Offset(0, rightSize)
-              : Offset(rightSize, 0));
-      _resizeImpl(
-          separatorIndex + 1,
-          _info.isHorizontalSeparator
-              ? Offset(0, -rightSize)
-              : Offset(-rightSize, 0));
-    }
+    _resizeImpl(separatorIndex - 1, offset);
+    _resizeImpl(separatorIndex + 1, offset * (-1));
   }
 
   void callOnResized() {
-    _info.onResized?.call(children
-        .where((x) => x.widget is! Separator)
-        .map((x) => WidgetSizeInfo(x.size!, x.percentage!))
-        .toList());
+    _info.onResized?.call(children.where((x) => x.widget is! Separator).map((x) => WidgetSizeInfo(x.size!, x.percentage!)).toList());
   }
 
-  bool tryHideOrShow(int separatorIndex) {
+  bool tryHideOrShow(BuildContext context, int separatorIndex) {
     if (_info.isDisabledSmartHide) {
       return false;
     }
@@ -116,21 +87,15 @@ class ResizableWidgetModel {
     final coefficient = isLeft ? 1 : -1;
     if (_isNearlyZero(size)) {
       // show
-      final offsetScala =
-          maxSize! * (target.hidingPercentage ?? target.defaultPercentage!) -
-              size;
-      final offset = _info.isHorizontalSeparator
-          ? Offset(0, offsetScala * coefficient)
-          : Offset(offsetScala * coefficient, 0);
-      resize(separatorIndex, offset);
+      final offsetScala = maxSize! * (target.hidingPercentage ?? target.defaultPercentage!) - size;
+      final offset = _info.isHorizontalSeparator ? Offset(0, offsetScala * coefficient) : Offset(offsetScala * coefficient, 0);
+      resize(context, separatorIndex, offset);
     } else {
       // hide
       target.hidingPercentage = target.percentage!;
       final offsetScala = maxSize! * target.hidingPercentage!;
-      final offset = _info.isHorizontalSeparator
-          ? Offset(0, -offsetScala * coefficient)
-          : Offset(-offsetScala * coefficient, 0);
-      resize(separatorIndex, offset);
+      final offset = _info.isHorizontalSeparator ? Offset(0, -offsetScala * coefficient) : Offset(-offsetScala * coefficient, 0);
+      resize(context, separatorIndex, offset);
     }
 
     return true;
@@ -138,10 +103,8 @@ class ResizableWidgetModel {
 
   double _resizeImpl(int widgetIndex, Offset offset) {
     final size = children[widgetIndex].size ?? 0;
-    children[widgetIndex].size =
-        size + (_info.isHorizontalSeparator ? offset.dy : offset.dx);
-    children[widgetIndex].percentage =
-        children[widgetIndex].size! / maxSizeWithoutSeparators!;
+    children[widgetIndex].size = size + (_info.isHorizontalSeparator ? offset.dy : offset.dx);
+    children[widgetIndex].percentage = children[widgetIndex].size! / maxSizeWithoutSeparators!;
     return children[widgetIndex].size!;
   }
 

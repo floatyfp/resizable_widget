@@ -21,4 +21,6 @@ class ResizableWidgetArgsInfo {
         separatorSize = widget.separatorSize,
         separatorColor = widget.separatorColor,
         onResized = widget.onResized;
+
+  bool get isVerticalSeparator => !isHorizontalSeparator;
 }

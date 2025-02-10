@@ -21,15 +21,15 @@ class ResizableWidgetController {
     _model.callOnResized();
   }
 
-  void resize(int separatorIndex, Offset offset) {
-    _model.resize(separatorIndex, offset);
+  void resize(BuildContext context, int separatorIndex, Offset offset) {
+    _model.resize(context, separatorIndex, offset);
 
     eventStream.add(this);
     _model.callOnResized();
   }
 
-  void tryHideOrShow(int separatorIndex) {
-    final result = _model.tryHideOrShow(separatorIndex);
+  void tryHideOrShow(BuildContext context, int separatorIndex) {
+    final result = _model.tryHideOrShow(context, separatorIndex);
 
     if (result) {
       eventStream.add(this);
