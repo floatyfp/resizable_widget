@@ -114,10 +114,13 @@ class _ResizableWidgetState extends State<ResizableWidget> {
       return child.widget;
     }
 
-    return SizedBox(
-      width: _info.isHorizontalSeparator ? double.infinity : child.size,
-      height: _info.isHorizontalSeparator ? child.size : double.infinity,
-      child: child.widget,
+    return ConstrainedBox(
+      constraints: child.constraints ?? const BoxConstraints(),
+      child: SizedBox(
+        width: _info.isHorizontalSeparator ? double.infinity : child.size,
+        height: _info.isHorizontalSeparator ? child.size : double.infinity,
+        child: child.widget,
+      ),
     );
   }
 }

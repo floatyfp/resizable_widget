@@ -81,6 +81,11 @@ class _MyPageState extends State<MyPage> {
                   ),
                 ),
                 ResizableWidget(
+                  constraints: const [
+                    null,
+                    BoxConstraints(minHeight: 150, maxHeight: 200),
+                    null,
+                  ],
                   children: [
                     Container(color: Colors.greenAccent),
                     Container(
