@@ -23,6 +23,19 @@ class ResizableWidget extends StatefulWidget {
   /// If this value is [null], [children] will be split into the same size.
   final List<double>? percentages;
 
+  /// Constraints among the [ResizableWidget] children.
+  ///
+  /// Used to force the widget to doesn't break constraints sizes.
+  ///
+  /// Sets the default [children] constraints sizes.
+  ///
+  /// If you set this value,
+  /// the length of [constraints] must match the one of [children].
+  /// If you don't want to set constraints to one child, just set it to [null] or [BoxConstraints()].
+  ///
+  /// If this value is [null], [children] will be resized without any constraints.
+  final List<BoxConstraints?>? constraints;
+
   /// When set to true, creates horizontal separators.
   @Deprecated('Use [isHorizontalSeparator] instead')
   final bool isColumnChildren;
@@ -53,8 +66,8 @@ class ResizableWidget extends StatefulWidget {
     Key? key,
     required this.children,
     this.percentages,
-    @Deprecated('Use [isHorizontalSeparator] instead')
-        this.isColumnChildren = false,
+    this.constraints,
+    @Deprecated('Use [isHorizontalSeparator] instead') this.isColumnChildren = false,
     this.isHorizontalSeparator = false,
     this.isDisabledSmartHide = false,
     this.separatorSize = 4,
@@ -63,8 +76,8 @@ class ResizableWidget extends StatefulWidget {
   }) : super(key: key) {
     assert(children.isNotEmpty);
     assert(percentages == null || percentages!.length == children.length);
-    assert(percentages == null ||
-        percentages!.reduce((value, element) => value + element) == 1);
+    assert(constraints == null || constraints!.length == children.length);
+    assert(percentages == null || percentages!.reduce((value, element) => value + element) == 1);
   }
 
   @override
@@ -85,17 +98,16 @@ class _ResizableWidgetState extends State<ResizableWidget> {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, constraints) {
-          _controller.setSizeIfNeeded(constraints);
-          return StreamBuilder(
-            stream: _controller.eventStream.stream,
-            builder: (context, snapshot) => _info.isHorizontalSeparator
-                ? Column(
-                    children: _controller.children.map(_buildChild).toList())
-                : Row(children: _controller.children.map(_buildChild).toList()),
-          );
-        },
+    builder: (context, constraints) {
+      _controller.setSizeIfNeeded(constraints);
+      return StreamBuilder(
+        stream: _controller.eventStream.stream,
+        builder: (context, snapshot) => _info.isHorizontalSeparator
+            ? Column(children: _controller.children.map(_buildChild).toList())
+            : Row(children: _controller.children.map(_buildChild).toList()),
       );
+    },
+  );
 
   Widget _buildChild(ResizableWidgetChildData child) {
     if (child.widget is Separator) {

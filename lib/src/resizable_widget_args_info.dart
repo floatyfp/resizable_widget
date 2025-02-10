@@ -4,6 +4,7 @@ import 'resizable_widget.dart';
 class ResizableWidgetArgsInfo {
   final List<Widget> children;
   final List<double>? percentages;
+  final List<BoxConstraints?>? constraints;
   final bool isHorizontalSeparator;
   final bool isDisabledSmartHide;
   final double separatorSize;
@@ -13,6 +14,7 @@ class ResizableWidgetArgsInfo {
   ResizableWidgetArgsInfo(ResizableWidget widget)
       : children = widget.children,
         percentages = widget.percentages,
+        constraints = widget.constraints,
         isHorizontalSeparator =
             // TODO: delete the deprecated member on the next minor update.
             // ignore: deprecated_member_use_from_same_package
@@ -21,6 +23,4 @@ class ResizableWidgetArgsInfo {
         separatorSize = widget.separatorSize,
         separatorColor = widget.separatorColor,
         onResized = widget.onResized;
-
-  bool get isVerticalSeparator => !isHorizontalSeparator;
 }
