@@ -96,51 +96,83 @@ class ResizableWidgetModel {
     var size1 = (childData1.size ?? 0) + delta;
     var size2 = (childData2.size ?? 0) - delta;
 
+    // Check which panel has constraints
+    final hasConstraints1 = constraints1 != const BoxConstraints();
+    final hasConstraints2 = constraints2 != const BoxConstraints();
+
     if (_info.isHorizontalSeparator) {
-      if (delta < 0) {
-        while (size1 < constraints1.minHeight || size2 > constraints2.maxHeight) {
-          if (size1 < constraints1.minHeight) {
-            size1 = constraints1.minHeight;
-            size2 = originalSize - size1;
+      // Handle vertical resizing
+      if (hasConstraints1 && !hasConstraints2) {
+        // Panel 1 has constraints, Panel 2 doesn't - prioritize Panel 1's constraints
+        if (size1 < constraints1.minHeight) size1 = constraints1.minHeight;
+        if (size1 > constraints1.maxHeight) size1 = constraints1.maxHeight;
+        size2 = originalSize - size1;
+      } else if (!hasConstraints1 && hasConstraints2) {
+        // Panel 2 has constraints, Panel 1 doesn't - prioritize Panel 2's constraints
+        if (size2 < constraints2.minHeight) size2 = constraints2.minHeight;
+        if (size2 > constraints2.maxHeight) size2 = constraints2.maxHeight;
+        size1 = originalSize - size2;
+      } else if (hasConstraints1 && hasConstraints2) {
+        // Both panels have constraints - try to satisfy both
+        if (delta < 0) {
+          while (size1 < constraints1.minHeight || size2 > constraints2.maxHeight) {
+            if (size1 < constraints1.minHeight) {
+              size1 = constraints1.minHeight;
+              size2 = originalSize - size1;
+            }
+            if (size2 > constraints2.maxHeight) {
+              size2 = constraints2.maxHeight;
+              size1 = originalSize - size2;
+            }
           }
-          if (size2 > constraints2.maxHeight) {
-            size2 = constraints2.maxHeight;
-            size1 = originalSize - size2;
-          }
-        }
-      } else {
-        while (size1 > constraints1.maxHeight || size2 < constraints2.minHeight) {
-          if (size1 > constraints1.maxHeight) {
-            size1 = constraints1.maxHeight;
-            size2 = originalSize - size1;
-          }
-          if (size2 < constraints2.minHeight) {
-            size2 = constraints2.minHeight;
-            size1 = originalSize - size2;
+        } else {
+          while (size1 > constraints1.maxHeight || size2 < constraints2.minHeight) {
+            if (size1 > constraints1.maxHeight) {
+              size1 = constraints1.maxHeight;
+              size2 = originalSize - size1;
+            }
+            if (size2 < constraints2.minHeight) {
+              size2 = constraints2.minHeight;
+              size1 = originalSize - size2;
+            }
           }
         }
       }
     } else {
-      if (delta < 0) {
-        while (size1 < constraints1.minWidth || size2 > constraints2.maxWidth) {
-          if (size1 < constraints1.minWidth) {
-            size1 = constraints1.minWidth;
-            size2 = originalSize - size1;
+      // Handle horizontal resizing
+      if (hasConstraints1 && !hasConstraints2) {
+        // Panel 1 has constraints, Panel 2 doesn't - prioritize Panel 1's constraints
+        if (size1 < constraints1.minWidth) size1 = constraints1.minWidth;
+        if (size1 > constraints1.maxWidth) size1 = constraints1.maxWidth;
+        size2 = originalSize - size1;
+      } else if (!hasConstraints1 && hasConstraints2) {
+        // Panel 2 has constraints, Panel 1 doesn't - prioritize Panel 2's constraints
+        if (size2 < constraints2.minWidth) size2 = constraints2.minWidth;
+        if (size2 > constraints2.maxWidth) size2 = constraints2.maxWidth;
+        size1 = originalSize - size2;
+      } else if (hasConstraints1 && hasConstraints2) {
+        // Both panels have constraints - try to satisfy both
+        if (delta < 0) {
+          while (size1 < constraints1.minWidth || size2 > constraints2.maxWidth) {
+            if (size1 < constraints1.minWidth) {
+              size1 = constraints1.minWidth;
+              size2 = originalSize - size1;
+            }
+            if (size2 > constraints2.maxWidth) {
+              size2 = constraints2.maxWidth;
+              size1 = originalSize - size2;
+            }
           }
-          if (size2 > constraints2.maxWidth) {
-            size2 = constraints2.maxWidth;
-            size1 = originalSize - size2;
-          }
-        }
-      } else {
-        while (size1 > constraints1.maxWidth || size2 < constraints2.minWidth) {
-          if (size1 > constraints1.maxWidth) {
-            size1 = constraints1.maxWidth;
-            size2 = originalSize - size1;
-          }
-          if (size2 < constraints2.minWidth) {
-            size2 = constraints2.minWidth;
-            size1 = originalSize - size2;
+        } else {
+          while (size1 > constraints1.maxWidth || size2 < constraints2.minWidth) {
+            if (size1 > constraints1.maxWidth) {
+              size1 = constraints1.maxWidth;
+              size2 = originalSize - size2;
+            }
+            if (size2 < constraints2.minWidth) {
+              size2 = constraints2.minWidth;
+              size1 = originalSize - size2;
+            }
           }
         }
       }
@@ -149,7 +181,6 @@ class ResizableWidgetModel {
     _resizeImpl(childData1, size1);
     _resizeImpl(childData2, size2);
   }
-
 
   void callOnResized() {
     _info.onResized?.call(
