@@ -20,54 +20,144 @@ class ResizableWidgetModel {
     final originalChildren = _info.children;
     final size = originalChildren.length;
     final originalPercentages = _info.percentages ?? List.filled(size, 1 / size);
-    for (var i = 0; i < size - 1; i++) {
-      children.add(ResizableWidgetChildData(originalChildren[i], originalPercentages[i]));
-      children.add(ResizableWidgetChildData(
-          separatorFactory.call(SeparatorArgsBasicInfo(
-            2 * i + 1,
-            _info.isHorizontalSeparator,
-            _info.isDisabledSmartHide,
-            _info.separatorSize,
-            _info.separatorColor,
-          )),
-          null));
+    final originalConstraints = _info.constraints;
+    for (var index = 0; index < size - 1; index++) {
+      children.add(
+        ResizableWidgetChildData(
+          originalChildren[index],
+          originalPercentages[index],
+          originalConstraints?.elementAt(index),
+        ),
+      );
+      final separatorWidget = separatorFactory.call(
+        SeparatorArgsBasicInfo(
+          2 * index + 1,
+          _info.isHorizontalSeparator,
+          _info.isDisabledSmartHide,
+          _info.separatorSize,
+          _info.separatorColor,
+        ),
+      );
+      children.add(
+        ResizableWidgetChildData(separatorWidget, null, null),
+      );
     }
-    children.add(ResizableWidgetChildData(originalChildren[size - 1], originalPercentages[size - 1]));
+
+    // Last widget
+    children.add(
+      ResizableWidgetChildData(
+        originalChildren[size - 1],
+        originalPercentages[size - 1],
+        originalConstraints?.elementAt(size - 1),
+      ),
+    );
   }
 
   void setSizeIfNeeded(BoxConstraints constraints) {
     final max = _info.isHorizontalSeparator ? constraints.maxHeight : constraints.maxWidth;
-    var isMaxSizeChanged = maxSize == null || maxSize! != max;
-    if (!isMaxSizeChanged || children.isEmpty) {
-      return;
-    }
+    if (maxSize != null && maxSize == max) return;
 
     maxSize = max;
     final remain = maxSizeWithoutSeparators!;
 
-    for (var c in children) {
-      if (c.widget is Separator) {
-        c.percentage = 0;
-        c.size = _info.separatorSize;
+    for (var index = 0; index < children.length; index++) {
+      if (children[index].widget is Separator) {
+        children[index].percentage = 0;
+        children[index].size = _info.separatorSize;
       } else {
-        c.size = remain * c.percentage!;
-        c.defaultPercentage = c.percentage;
+        children[index].size = remain * children[index].percentage!;
+        children[index].defaultPercentage = children[index].percentage;
       }
+    }
+
+    for (var index = 1; index < children.length - 1; index += 2) {
+      final originalSize = (children[index - 1].size ?? 0) + (children[index + 1].size ?? 0);
+      _updateSizes(index - 1, index + 1, 0, originalSize);
     }
   }
 
   void resize(BuildContext context, int separatorIndex, Offset offset) {
-    if (_info.isVerticalSeparator && Directionality.of(context) == TextDirection.rtl) {
-      // Reverse offset if separator is vertical and context direction is Right-to-Left.
-      offset *= -1;
+    if (!_info.isHorizontalSeparator && Directionality.of(context) == TextDirection.rtl) {
+      offset = offset * -1;
     }
 
-    _resizeImpl(separatorIndex - 1, offset);
-    _resizeImpl(separatorIndex + 1, offset * (-1));
+    var delta = _info.isHorizontalSeparator ? offset.dy : offset.dx;
+    final originalSize = (children[separatorIndex - 1].size ?? 0) + (children[separatorIndex + 1].size ?? 0);
+
+    _updateSizes(separatorIndex - 1, separatorIndex + 1, delta, originalSize);
   }
 
+  void _updateSizes(int index1, int index2, double delta, double originalSize) {
+    final childData1 = children[index1];
+    final childData2 = children[index2];
+    final constraints1 = childData1.constraints ?? const BoxConstraints();
+    final constraints2 = childData2.constraints ?? const BoxConstraints();
+
+    var size1 = (childData1.size ?? 0) + delta;
+    var size2 = (childData2.size ?? 0) - delta;
+
+    if (_info.isHorizontalSeparator) {
+      if (delta < 0) {
+        while (size1 < constraints1.minHeight || size2 > constraints2.maxHeight) {
+          if (size1 < constraints1.minHeight) {
+            size1 = constraints1.minHeight;
+            size2 = originalSize - size1;
+          }
+          if (size2 > constraints2.maxHeight) {
+            size2 = constraints2.maxHeight;
+            size1 = originalSize - size2;
+          }
+        }
+      } else {
+        while (size1 > constraints1.maxHeight || size2 < constraints2.minHeight) {
+          if (size1 > constraints1.maxHeight) {
+            size1 = constraints1.maxHeight;
+            size2 = originalSize - size1;
+          }
+          if (size2 < constraints2.minHeight) {
+            size2 = constraints2.minHeight;
+            size1 = originalSize - size2;
+          }
+        }
+      }
+    } else {
+      if (delta < 0) {
+        while (size1 < constraints1.minWidth || size2 > constraints2.maxWidth) {
+          if (size1 < constraints1.minWidth) {
+            size1 = constraints1.minWidth;
+            size2 = originalSize - size1;
+          }
+          if (size2 > constraints2.maxWidth) {
+            size2 = constraints2.maxWidth;
+            size1 = originalSize - size2;
+          }
+        }
+      } else {
+        while (size1 > constraints1.maxWidth || size2 < constraints2.minWidth) {
+          if (size1 > constraints1.maxWidth) {
+            size1 = constraints1.maxWidth;
+            size2 = originalSize - size1;
+          }
+          if (size2 < constraints2.minWidth) {
+            size2 = constraints2.minWidth;
+            size1 = originalSize - size2;
+          }
+        }
+      }
+    }
+
+    _resizeImpl(childData1, size1);
+    _resizeImpl(childData2, size2);
+  }
+
+
   void callOnResized() {
-    _info.onResized?.call(children.where((x) => x.widget is! Separator).map((x) => WidgetSizeInfo(x.size!, x.percentage!)).toList());
+    _info.onResized?.call(
+      children
+          .where((widgetData) => widgetData.widget is! Separator)
+          .map((widgetData) => WidgetSizeInfo(widgetData.size!, widgetData.percentage!, widgetData.constraints))
+          .toList(),
+    );
   }
 
   bool tryHideOrShow(BuildContext context, int separatorIndex) {
@@ -101,11 +191,10 @@ class ResizableWidgetModel {
     return true;
   }
 
-  double _resizeImpl(int widgetIndex, Offset offset) {
-    final size = children[widgetIndex].size ?? 0;
-    children[widgetIndex].size = size + (_info.isHorizontalSeparator ? offset.dy : offset.dx);
-    children[widgetIndex].percentage = children[widgetIndex].size! / maxSizeWithoutSeparators!;
-    return children[widgetIndex].size!;
+  double _resizeImpl(ResizableWidgetChildData childData, double newSize) {
+    childData.size = newSize;
+    childData.percentage = childData.size! / maxSizeWithoutSeparators!;
+    return childData.size!;
   }
 
   bool _isNearlyZero(double size) {

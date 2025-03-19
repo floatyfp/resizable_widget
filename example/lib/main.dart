@@ -19,7 +19,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 class MyPage extends StatefulWidget {
   const MyPage({Key? key}) : super(key: key);
 
@@ -35,12 +34,12 @@ class _MyPageState extends State<MyPage> {
     final rtl = textDirection == TextDirection.rtl;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Resizable Widget Example (${rtl? 'Right-to-Left' : 'Left-to-Right'})'),
+        title: Text('Resizable Widget Example (${rtl ? 'Right-to-Left' : 'Left-to-Right'})'),
         actions: [
           IconButton(
             icon: Icon(rtl ? Icons.subdirectory_arrow_left : Icons.subdirectory_arrow_right),
             onPressed: () {
-              setState(() => textDirection = rtl? TextDirection.ltr : TextDirection.rtl);
+              setState(() => textDirection = rtl ? TextDirection.ltr : TextDirection.rtl);
             },
           ),
         ],
@@ -53,18 +52,48 @@ class _MyPageState extends State<MyPage> {
           separatorColor: Colors.white12,
           separatorSize: 4,
           onResized: _printResizeInfo,
+          constraints: const [
+            BoxConstraints(minWidth: 100),
+            null,
+            null,
+          ],
           children: [
-            Container(color: Colors.greenAccent),
+            Container(
+              color: Colors.green,
+              child: const Center(
+                child: Text('Min Width is 100', style: TextStyle(color: Colors.black)),
+              ),
+            ),
             ResizableWidget(
               isHorizontalSeparator: true,
               separatorColor: Colors.blue,
               separatorSize: 10,
+              constraints: const [
+                BoxConstraints(minHeight: 200),
+                BoxConstraints(minHeight: 100, maxHeight: 250),
+                null,
+              ],
               children: [
-                Container(color: Colors.greenAccent),
+                Container(
+                  color: Colors.amber,
+                  child: const Center(
+                    child: Text('Min Height is 200', style: TextStyle(color: Colors.black)),
+                  ),
+                ),
                 ResizableWidget(
+                  constraints: const [
+                    null,
+                    BoxConstraints(minHeight: 150, maxHeight: 200),
+                    null,
+                  ],
                   children: [
                     Container(color: Colors.greenAccent),
-                    Container(color: Colors.yellowAccent),
+                    Container(
+                      color: Colors.yellowAccent,
+                      child: const Center(
+                        child: Text('Min Height is 100\nMax Height is 250', style: TextStyle(color: Colors.black)),
+                      ),
+                    ),
                     Container(color: Colors.redAccent),
                   ],
                   percentages: const [0.2, 0.5, 0.3],
@@ -81,6 +110,6 @@ class _MyPageState extends State<MyPage> {
 
   void _printResizeInfo(List<WidgetSizeInfo> dataList) {
     // ignore: avoid_print
-    print(dataList.map((x) => '(${x.size}, ${x.percentage}%)').join(", "));
+    // print(dataList.map((x) => '(${x.size}, ${x.percentage}%)').join(", "));
   }
 }
